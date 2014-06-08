@@ -25,7 +25,7 @@ namespace WpfApplication3
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     /// 
-
+    public delegate void messageDelegate(String s);
     public partial class MainWindow : Window
     {
         public static IDictionary<string, Delegate> dict =
@@ -35,7 +35,8 @@ namespace WpfApplication3
         IPAddress ip;
         int port = 50000;
         bool init = true;
-        //NetworkStream netStream;
+         TcpListener listener;
+        NetworkStream netStream;
         public MainWindow()
         {
            
@@ -61,11 +62,18 @@ namespace WpfApplication3
 
              }*/
         }
+        /*public void AppendTextBox(string value)
+        {
+            if(InvokeRequired)
+            {
+                this.in
+            }
+        }*/
 
-        private void InitialSetup(object sender, EventArgs e)
+        private async void InitialSetup(object sender, EventArgs e)
         {
 
-
+            //dict.Add("tBox", new messageDelegate();
             if (init)
             {
                 init = false;
@@ -76,57 +84,17 @@ namespace WpfApplication3
                     this.Title = "Client";
                     IPAddressDialog ipDialog = new IPAddressDialog();
                     Nullable<bool> ipDialogResult = ipDialog.ShowDialog();
-                    ip = IPAddress.Parse(Application.Current.Properties["ServerIP"].ToString());
-                    TcpListener listener = new TcpListener(ip, port);
-                    listener.Start();
-                    while (true)
-                    {
 
-                        tcpClient = listener.AcceptTcpClient();
 
-                        //console write connection excepted
-                        Console.WriteLine("connection accepted");
-                        IsRemotePeerOpen = true;
-
-                        Thread th = new Thread(netReaderMonitor);
-
-                        th.Start();
-                        Console.WriteLine("new thread started");
-                        //console write new thread started
-
-                    }
-                }
-
-                else
-                {
-                    ip = IPAddress.Any;
-                    TcpListener listener = new TcpListener(ip, port);
-                    listener.Start();
-                    while (true)
-                    {
-
-                        tcpClient = listener.AcceptTcpClient();
-
-                        //console write connection excepted
-                        Console.WriteLine("connection accepted");
-                        IsRemotePeerOpen = true;
-
-                        Thread th = new Thread(netReaderMonitor);
-
-                        th.Start();
-                        Console.WriteLine("new thread started");
-                        //console write new thread started
-
-                    }
                 }
                
             }
 
-       
-             
 
-       
 
+
+
+            await Task.Run(() => netSetUp());
            
                            
 
@@ -136,8 +104,8 @@ namespace WpfApplication3
         {
             // Pop up a file open dialog
             OpenFileDialog dlg = new OpenFileDialog();
-            dlg.Filter = "All supported graphics|*.jpg;*.jpeg;*.png|" +
-                "JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|" +
+            dlg.Filter = //"All supported graphics|*.jpg;*.jpeg;*.png|" +
+               // "JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|" +
                 "Portable Network Graphic (*.png)|*.png";
             if(dlg.ShowDialog() == true)
             {
@@ -147,7 +115,7 @@ namespace WpfApplication3
                 BitmapImage img = new BitmapImage(new Uri(dlg.FileName));
                 sentImage.Source = img;
                 System.Windows.MessageBox.Show(filetype);
-                if(filetype.Equals(".jpg") || filetype.Equals(".Jpeg"))
+               /* if(filetype.Equals(".jpg") || filetype.Equals(".Jpeg"))
                 {
                     JpegBitmapEncoder encoder = new JpegBitmapEncoder();
                     encoder.Frames.Add(BitmapFrame.Create(img));
@@ -157,9 +125,9 @@ namespace WpfApplication3
                         byteImg = ms.ToArray();
                     }
                      System.Windows.MessageBox.Show(filetype);
-                }
-                else if(filetype.Equals(".png") )
-                {
+                }*/
+                //else if(filetype.Equals(".png") )
+               // {
                     PngBitmapEncoder encoder = new PngBitmapEncoder();
                     encoder.Frames.Add(BitmapFrame.Create(img));
                     using (MemoryStream ms = new MemoryStream())
@@ -168,8 +136,16 @@ namespace WpfApplication3
                         byteImg = ms.ToArray();
                     }
                     System.Windows.MessageBox.Show(filetype);
-                }
+               // }
+                    NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
+                    BinaryWriter netWriter = new BinaryWriter(netStream);
 
+                    
+                    netWriter.Write("Pic");
+                    netWriter.Write(byteImg.LongLength);
+                    netWriter.Write(byteImg);
+                    netWriter.Flush();
+                   
                 
             }
             
@@ -179,10 +155,13 @@ namespace WpfApplication3
         // from the remote side
         private void netReaderMonitor()
         {
+           // AppendTextBox("");
+
             //TcpClient tcpClient = arg as TcpClient;
             NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
             BinaryReader netReader = new BinaryReader(netStream);
-            
+            //Application.Current.Dispatcher.Invoke(() => Application.Current.MainWindow.Activate());
+            //MessageTextBox.Dispatcher.Invoke(new Update);
             //e.Cancel = true;
             while (IsRemotePeerOpen)
             {
@@ -225,16 +204,56 @@ namespace WpfApplication3
         }
         private void sendMessage(object sender, RoutedEventArgs e)
         {
+            ChatHistoryTextBox.Dispatcher.Invoke(() => ChatHistoryTextBox.AppendText("Me: " + MessageTextBox.Text + "\n"));
             NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
             BinaryWriter netWriter = new BinaryWriter(netStream);
 
-            ChatHistoryTextBox.AppendText("Me: " + MessageTextBox.Text + "\n");
+            
             //System.Windows.MessageBox.Show(MessageTextBox.Text);
             netWriter.Write("Chat");
             netWriter.Write(MessageTextBox.Text);
             netWriter.Flush();
             MessageTextBox.Clear();
 
+        }
+
+        private void netSetUp()
+        {
+            if (init == false)
+            {
+                //System.Windows.MessageBox.Show("in Net setUP");
+
+              /*  if (Application.Current.Properties["IsServer"].Equals(false))
+                {
+                    ip = IPAddress.Parse(Application.Current.Properties["ServerIP"].ToString());
+                    listener = new TcpListener(ip, port);
+                    listener.Start();
+                }
+                else
+                {
+                    ip = IPAddress.Any;
+                    listener = new TcpListener(ip, port);
+                    listener.Start();
+                }*/
+                listener = new TcpListener(IPAddress.Any, port);
+                listener.Start();
+                while (true)
+                {
+                
+                    tcpClient = listener.AcceptTcpClient();
+
+                    //console write connection excepted
+                    Console.WriteLine("connection accepted");
+                    IsRemotePeerOpen = true;
+
+                    Thread th = new Thread(netReaderMonitor);
+
+                    th.Start();
+                    Console.WriteLine("new thread started");
+                    //console write new thread started
+
+                }
+            }
         }
 
 
