@@ -31,12 +31,12 @@ namespace WpfApplication3
         public static IDictionary<string, Delegate> dict =
           new Dictionary<string, Delegate>();
         bool IsRemotePeerOpen;
-        TcpClient tcpClient;
-        IPAddress ip;
-        int port = 50000;
+        TcpClient client;
+      //  IPAddress ip;
+       // int port = 50000;
         bool init = true;
-         TcpListener listener;
-        NetworkStream netStream;
+       //  TcpListener listener;
+        //NetworkStream netStream;
         public MainWindow()
         {
            
@@ -87,14 +87,15 @@ namespace WpfApplication3
 
 
                 }
+               await Task.Run(()=> netSetUp());
                
             }
+            
 
 
 
 
-
-            await Task.Run(() => netSetUp());
+          
            
                            
 
@@ -137,14 +138,14 @@ namespace WpfApplication3
                     }
                     System.Windows.MessageBox.Show(filetype);
                // }
-                    NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
-                    BinaryWriter netWriter = new BinaryWriter(netStream);
+                 //   NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
+                   // BinaryWriter netWriter = new BinaryWriter(netStream);
 
                     
-                    netWriter.Write("Pic");
-                    netWriter.Write(byteImg.LongLength);
-                    netWriter.Write(byteImg);
-                    netWriter.Flush();
+                //    netWriter.Write("Pic");
+                 //   netWriter.Write(byteImg.LongLength);
+                //    netWriter.Write(byteImg);
+                 //   netWriter.Flush();
                    
                 
             }
@@ -153,10 +154,11 @@ namespace WpfApplication3
         }
         // Thread function for monitoring the net reader for input
         // from the remote side
-        private void netReaderMonitor()
+        private void netReaderMonitor(Object arg)
         {
-           // AppendTextBox("");
 
+           // AppendTextBox("");
+            TcpClient tcpClient = arg as TcpClient;
             //TcpClient tcpClient = arg as TcpClient;
             NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
             BinaryReader netReader = new BinaryReader(netStream);
@@ -205,19 +207,20 @@ namespace WpfApplication3
         private void sendMessage(object sender, RoutedEventArgs e)
         {
             ChatHistoryTextBox.Dispatcher.Invoke(() => ChatHistoryTextBox.AppendText("Me: " + MessageTextBox.Text + "\n"));
-            NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
-            BinaryWriter netWriter = new BinaryWriter(netStream);
+
+            //NetworkStream netStream = client.GetStream();  //        NetworkStream is a binary stream
+          //  BinaryWriter netWriter = new BinaryWriter(netStream);
 
             
             //System.Windows.MessageBox.Show(MessageTextBox.Text);
-            netWriter.Write("Chat");
-            netWriter.Write(MessageTextBox.Text);
-            netWriter.Flush();
-            MessageTextBox.Clear();
+           // netWriter.Write("Chat");
+          //  netWriter.Write(MessageTextBox.Text);
+         //   netWriter.Flush();
+           MessageTextBox.Clear();
 
         }
 
-        private void netSetUp()
+        private async void netSetUp()
         {
             if (init == false)
             {
@@ -235,13 +238,16 @@ namespace WpfApplication3
                     listener = new TcpListener(ip, port);
                     listener.Start();
                 }*/
-                listener = new TcpListener(IPAddress.Any, port);
+             //   listener = new TcpListener(IPAddress.Any, port);
+              //  listener.Start();
+                int port = 50000;
+                TcpListener listener = new TcpListener(IPAddress.Any, port);
                 listener.Start();
                 while (true)
                 {
                 
-                    tcpClient = listener.AcceptTcpClient();
-
+                    TcpClient tcpClient = listener.AcceptTcpClient();
+                    client = tcpClient; 
                     //console write connection excepted
                     Console.WriteLine("connection accepted");
                     IsRemotePeerOpen = true;
