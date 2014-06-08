@@ -32,30 +32,52 @@ namespace WpfApplication3
           new Dictionary<string, Delegate>();
         bool IsRemotePeerOpen;
         TcpClient tcpClient;
+        IPAddress ip;
+        int port = 50000;
+        bool init = true;
         //NetworkStream netStream;
         public MainWindow()
         {
-
-            System.Windows.MessageBox.Show("hello");
+           
+           
             InitializeComponent();
-            
+            //System.Windows.MessageBox.Show(ip.ToString());
+            /* TcpListener listener = new TcpListener(ip, port);
+             listener.Start();
+             while (true)
+             {
+
+                 tcpClient = listener.AcceptTcpClient();
+
+                 //console write connection excepted
+                 Console.WriteLine("connection accepted");
+                 IsRemotePeerOpen = true;
+
+                 Thread th = new Thread(netReaderMonitor);
+
+                 th.Start();
+                 Console.WriteLine("new thread started");
+                 //console write new thread started
+
+             }*/
         }
 
         private void InitialSetup(object sender, EventArgs e)
         {
 
 
-            int port = 50000;
+            if (init)
+            {
+                init = false;
                 ClientServerDialog dialogBox = new ClientServerDialog();
                 Nullable<bool> dialogResult = dialogBox.ShowDialog();
-                if(Application.Current.Properties["IsServer"].Equals(false))
+                if (Application.Current.Properties["IsServer"].Equals(false))
                 {
                     this.Title = "Client";
                     IPAddressDialog ipDialog = new IPAddressDialog();
                     Nullable<bool> ipDialogResult = ipDialog.ShowDialog();
-                    //IPAddress ip =  IPAddress.Parse(Application.Current.Properties["ServerIP"].ToString());
-                    //System.Windows.MessageBox.Show(ip.ToString());
-                    TcpListener listener = new TcpListener(IPAddress.Any, port);
+                    ip = IPAddress.Parse(Application.Current.Properties["ServerIP"].ToString());
+                    TcpListener listener = new TcpListener(ip, port);
                     listener.Start();
                     while (true)
                     {
@@ -74,9 +96,11 @@ namespace WpfApplication3
 
                     }
                 }
+
                 else
                 {
-                    TcpListener listener = new TcpListener(IPAddress.Any, port); ;
+                    ip = IPAddress.Any;
+                    TcpListener listener = new TcpListener(ip, port);
                     listener.Start();
                     while (true)
                     {
@@ -96,6 +120,7 @@ namespace WpfApplication3
                     }
                 }
                
+            }
 
        
              
@@ -154,7 +179,6 @@ namespace WpfApplication3
         // from the remote side
         private void netReaderMonitor()
         {
-            
             //TcpClient tcpClient = arg as TcpClient;
             NetworkStream netStream = tcpClient.GetStream();  //        NetworkStream is a binary stream
             BinaryReader netReader = new BinaryReader(netStream);
@@ -176,6 +200,8 @@ namespace WpfApplication3
                 switch (netInput)
                 {
                     case "Chat":
+                        ChatHistoryTextBox.Text += "Remote: " + netInput + "\n";
+
 
                         break;
                     case "Pic":
@@ -210,6 +236,7 @@ namespace WpfApplication3
             MessageTextBox.Clear();
 
         }
+
 
 
 

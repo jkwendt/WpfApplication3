@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WpfApplication3.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Server" HorizontalAlignment="Center" SizeToContent="WidthAndHeight" Initialized="InitialSetup">
+        Title="Server" HorizontalAlignment="Center" SizeToContent="WidthAndHeight" Activated="InitialSetup">
     <StackPanel  >
 
             
